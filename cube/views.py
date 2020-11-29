@@ -6,6 +6,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from . import models, serializers
 from .rules import Rules
+from request_log.mixins import RequestLogViewMixin
+
+import logging
+logger = logging.getLogger(__name__)
 
 class EventsAPI(generics.GenericAPIView):
     '''
@@ -59,7 +63,7 @@ class EventsAPI(generics.GenericAPIView):
                     else:
                         return Response({"message": feedback.errors}, status=status.HTTP_400_BAD_REQUEST)
                 
-                rules = Rules().implement_rules(user, event)
+                rules = Rules().implement_rules(user, event, request)
                 # # Call Rules on event
                 # res, message = Rules().first_bill_pay(user, event)
                 # if res:
@@ -74,4 +78,12 @@ class EventsAPI(generics.GenericAPIView):
             return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exe:
             print(exe)
-            raise exe
+            return Response({"message": str(exe)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class DummyAPI(RequestLogViewMixin, generics.GenericAPIView):
+
+    def post(self, request):
+        try:
+            return Response({"message": "Trigger Sent"}, status=status.HTTP_200_OK)
+        except Exception as exe:
+            return Response({"message": str(exe)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

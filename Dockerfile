@@ -21,7 +21,8 @@ ENV PORT=8000
 
 COPY requirements.txt ./
 # Install system dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 EXPOSE 8000
+# CMD exec python manage.py process_tasks
 CMD exec gunicorn project.wsgi:application --bind 0.0.0.0:$PORT --workers 3

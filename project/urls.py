@@ -16,7 +16,6 @@ Including another URLconf
 from django.urls import path, include
 
 urlpatterns = [
-    path('', include('vernacular.urls'), name='vernacular'),
     path('api/v1/', include('cube.urls'), name='cube'),
 
 ]

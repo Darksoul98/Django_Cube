@@ -1,5 +1,4 @@
 from django.db import models
-from jsonfield import JSONField
 
 
 class User(models.Model):
@@ -17,6 +16,7 @@ class Event(models.Model):
     noun = models.CharField(max_length=10)
     verb = models.CharField(max_length=10)
     timespent = models.IntegerField(null=True, blank=False)  # timespent on screen
+    marked = models.BooleanField(null=False, default=False)
 
 class Payment(models.Model):
     class Meta:
@@ -32,21 +32,3 @@ class Feedback(models.Model):
         db_table = "feedback"
     eventid = models.ForeignKey(Event, on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
-
-# {"noun": "bill", "userid": 178765, "ts": "20170315 134850", "latlong": "19.07,72.87", "verb": "pay", "timespent": 72, "properties": {"bank": "hdfc", "merchantid": 234, "value": 139.5, "mode": "netbank"}}
-
-# class Payment(models.Model):
-#     class Meta:
-#         db_table="payment"
-    
-    # title = models.CharField(max_length=50)
-    # type_of_notes = models.IntegerField(choices=(
-    #     (0,'Events'),
-    #     (1,'Individual'),
-    #     (2,'Entity'),
-    #     (3,'Genrics'),
-    # ))
-    # description = models.CharField(max_length=400)
-    # event_id = models.CharField(max_length=50, blank=True, null=True)
-    # tags = models.ManyToManyField(Tag, blank=True, null=True)
-    # date_updated = models.DateTimeField(auto_now=True)
