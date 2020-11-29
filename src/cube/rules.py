@@ -3,12 +3,26 @@ from django.db.models import Count, Sum
 from background_task import background
 import requests
 from . import models
+import socket
 
-base_url = None 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
 class Trigger(object):
 
     @background(schedule=timedelta(seconds=5))
-    def notify_user(user_id=None, event_id=None, base_url=None):
+    def notify_user(user_id=None, event_id=None):
+
+        print("Checking {} and {}".format(user_id, event_id))
         user = models.User.objects.get(pk=user_id)
         event = models.Event.objects.get(pk=event_id)
 
@@ -21,14 +35,16 @@ class Trigger(object):
             .filter(marked=False)\
             .filter(noun='fdbk')\
             .first()
-        
         if not fdbk_event:
-            # call Dummy API to alert operator
-            response = requests.post(base_url, data={"message": "Didn't recieve feedback for user {} and  event {}".format(user_id, event_id)})
+            try:
+                # call Dummy API to alert operator
+                response = requests.post(url="http://" + get_ip() + ":8000/api/v1/dummyapi", data={"message": "Didn't recieve feedback for user {} and  event {}".format(user_id, event_id)})
+                print(response)
+            except Exception as exe:
+                print(exe)
         else:
             fdbk_event.marked = True
             fdbk_event.save()
-
 
 class Rules(object):
     def _first_bill_pay(self, user=None, event=None):    
@@ -64,6 +80,16 @@ class Rules(object):
         return False, "NR"
     
     def implement_rules(self, user=None, event=None, request=None):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        print(IP)
         if user and event and request:
             global base_url
             base_url = request.scheme + '://' + request.get_host() + '/api/v1/dummyapi'
@@ -76,7 +102,7 @@ class Rules(object):
             if res:
                 response = requests.post(base_url, data={"message": message})
 
-            Trigger().notify_user(user_id=user.userid, event_id=event.id, base_url=base_url)
+            Trigger().notify_user(user_id=user.userid, event_id=event.id)
 
             return True
         else:

@@ -21,12 +21,13 @@ class EventsAPI(generics.GenericAPIView):
 
     def post(self, request):
         try:
-            user = models.User.objects.filter(userid=request.data["userid"]).first()
-            if not isinstance(user, models.User):
-                user = models.User(
-                    userid=request.data["userid"]
-                )
-                user.save()
+            # import pdb; pdb.set_trace()
+            # user = models.User.objects.filter(userid=request.data["userid"]).first()
+            # if not isinstance(user, models.User):
+            #     user = models.User(
+            #         userid=request.data["userid"]
+            #     )
+            #     user.save()
             
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
