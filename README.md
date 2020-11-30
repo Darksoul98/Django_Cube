@@ -65,7 +65,7 @@ sudo docker-compose up -d
 ```
 ### Run migrations
 ```bash
-sudo docker-compose run web python manage.py migrate
+sudo docker-compose run web python src/manage.py migrate
 ```
 - Some services may not start without running migrations. 
 - After running migrations run following command to start remaining services as well
