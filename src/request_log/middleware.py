@@ -1,7 +1,8 @@
+import json
+import logging
 import socket
 import time
 
-import logging
 logger = logging.getLogger(__name__)
 
 class RequestLogMiddleware(object):
@@ -24,7 +25,7 @@ class RequestLogMiddleware(object):
 
             'request_method': request.method,
             'request_path': request.get_full_path(),
-            'request_body': request.body,
+            'request_body': json.loads(request.body.decode('utf-8')),
 
             'response_status': response.status_code,
             'response_body': response_body,
@@ -32,6 +33,7 @@ class RequestLogMiddleware(object):
             'run_time': time.time() - request.start_time,
         }
 
-        # save log_data to files
+        # save log_data to file
         logger.info(log_data)
+        print(log_data)
         return response

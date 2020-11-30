@@ -31,7 +31,7 @@ services:
     networks:
       - local
 
-  web2:
+  background_process:
     build: .
     command: python src/manage.py process_tasks
     volumes:

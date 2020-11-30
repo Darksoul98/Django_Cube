@@ -1,11 +1,16 @@
-from datetime import datetime, timedelta 
-from django.db.models import Count, Sum
-from background_task import background
-import requests
-from . import models
+import json
 import socket
+from datetime import datetime, timedelta
 
+import requests
+from background_task import background
+from django.db.models import Count, Sum
+
+from . import models
+from django.conf import settings
 def get_ip():
+    if settings.DEBUG:
+        return '127.0.0.1'
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         # doesn't even have to be reachable
@@ -19,8 +24,8 @@ def get_ip():
 
 class Trigger(object):
 
-    @background(schedule=timedelta(seconds=5))
-    def notify_user(user_id=None, event_id=None):
+    @background(schedule=timedelta(seconds=10))
+    def notify_user(user_id=None, event_id=None, ip=None):
 
         print("Checking {} and {}".format(user_id, event_id))
         user = models.User.objects.get(pk=user_id)
@@ -38,7 +43,8 @@ class Trigger(object):
         if not fdbk_event:
             try:
                 # call Dummy API to alert operator
-                response = requests.post(url="http://" + get_ip() + ":8000/api/v1/dummyapi", data={"message": "Didn't recieve feedback for user {} and  event {}".format(user_id, event_id)})
+                payload = {"message": "Didn't recieve feedback for user {} and  event {}".format(user_id, event_id)}
+                response = requests.post(url="http://" + ip + ":8000/api/v1/dummyapi", data=json.dumps(payload))
                 print(response)
             except Exception as exe:
                 print(exe)
@@ -48,12 +54,10 @@ class Trigger(object):
 
 class Rules(object):
     def _first_bill_pay(self, user=None, event=None):    
-        if user and event:
-            if event.noun == 'bill':
-                bill_events = user.event_set.filter(noun="bill").all()
-                if (bill_events) and (len(bill_events) == 1) and (event in bill_events):
-                    return True, "First Bill Pay by user {}".format(user.userid)
-                return False, "NR"
+        if user and event and event.noun == 'bill':
+            bill_events = user.event_set.filter(noun="bill").all()
+            if (bill_events) and (len(bill_events) == 1) and (event in bill_events):
+                return True, "First Bill Pay by user {}".format(user.userid)
             return False, "NR"     
         return False, "NR"
 
@@ -80,29 +84,21 @@ class Rules(object):
         return False, "NR"
     
     def implement_rules(self, user=None, event=None, request=None):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        try:
-            # doesn't even have to be reachable
-            s.connect(('10.255.255.255', 1))
-            IP = s.getsockname()[0]
-        except:
-            IP = '127.0.0.1'
-        finally:
-            s.close()
-        print(IP)
-        if user and event and request:
-            global base_url
+        if user and event and request and event.verb == 'pay' and event.noun == 'bill':
             base_url = request.scheme + '://' + request.get_host() + '/api/v1/dummyapi'
 
+            # Rule 1 - Check if this is the first bill Payment
             res, message = self._first_bill_pay(user, event)
             if res:
-                response = requests.post(base_url, data={"message": message})
+                response = requests.post(base_url, data=json.dumps({"message": message}))
 
+            # Rule 2 - Frequent Payments
             res, message = self._frequent_payment(user, event)
             if res:
-                response = requests.post(base_url, data={"message": message})
-
-            Trigger().notify_user(user_id=user.userid, event_id=event.id)
+                response = requests.post(base_url, data=json.dumps({"message": message}))
+            print(get_ip())
+            # Rule 3 - Feedback Check for bill pay event
+            Trigger().notify_user(user_id=user.userid, event_id=event.id, ip=get_ip())
 
             return True
         else:
