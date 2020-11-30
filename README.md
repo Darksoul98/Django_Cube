@@ -1,10 +1,8 @@
 
 ## Django
-- application files are in `src` folder
 - `request_log` consists of logging middleware
-- In `cube.views` Event and DummyAPI are defined
+- Event and DummyAPI are defined in `cube.views` 
 - `serializers` Helps in validating the input and raises error if something is missing or in invalid format
-- Rules class consists of all the rules are defined in
 - Docker has 3 services- db, web and background_tasks
 - For Rule 3 tasks are stored in DB with user and event ids, to be called after specified time in decorator of `class Trigger > notify_user` in rules.py
 - `background_tasks` service checks for tasks to be executed in background_tasks table
