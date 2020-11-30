@@ -34,12 +34,15 @@ class Trigger(object):
         ts_before = datetime.strptime(event.ts, "%Y%m%d %H%M%S")
         ts_curr = (ts_before + timedelta(minutes=15)).strftime("%Y%m%d %H%M%S")
 
+        # Checks for feedback event of same user between [event_ts, event_ts+15 mins], which is not marked
         fdbk_event = models.Event.objects\
             .filter(ts__range=[event.ts, ts_curr])\
             .filter(userid=user)\
             .filter(marked=False)\
             .filter(noun='fdbk')\
             .first()
+
+        # if not found
         if not fdbk_event:
             try:
                 # call Dummy API to alert operator
@@ -49,6 +52,7 @@ class Trigger(object):
             except Exception as exe:
                 print(exe)
         else:
+            # if feedback event is found update DB
             fdbk_event.marked = True
             fdbk_event.save()
 
@@ -85,6 +89,8 @@ class Rules(object):
     
     def implement_rules(self, user=None, event=None, request=None):
         if user and event and request and event.verb == 'pay' and event.noun == 'bill':
+            # Runs following rules only if it is bill pay event.
+            
             base_url = request.scheme + '://' + request.get_host() + '/api/v1/dummyapi'
 
             # Rule 1 - Check if this is the first bill Payment
